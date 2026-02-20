@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0a0a0f">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+	<link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="manifest" href="manifest.json">
+    <title>Litball Control</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        :root {
+            --bg-primary: #0a0a0f; --bg-card: #12121a; --bg-card-hover: #1a1a25;
+            --border: #1e1e2e; --text-primary: #e8e8f0; --text-secondary: #6b6b80;
+            --text-dim: #3a3a50; --accent-orange: #ff6b2c;
+            --accent-orange-glow: rgba(255, 107, 44, 0.15); --accent-warm: #ffaa44;
+            --accent-green: #44dd88; --accent-green-glow: rgba(68, 221, 136, 0.15);
+            --accent-red: #ff4455; --accent-red-glow: rgba(255, 68, 85, 0.15);
+        }
+
+        body {
+            background: var(--bg-primary); color: var(--text-primary);
+            font-family: 'Outfit', sans-serif; min-height: 100vh;
+            overflow-x: hidden; padding: 0 16px 32px;
+        }
+
+        body::before {
+            content: ''; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(ellipse at 20% 0%, rgba(255, 107, 44, 0.06) 0%, transparent 60%),
+                        radial-gradient(ellipse at 80% 100%, rgba(68, 221, 136, 0.04) 0%, transparent 60%);
+            pointer-events: none; z-index: 0;
+        }
+
+        .container { max-width: 420px; margin: 0 auto; position: relative; z-index: 1; }
+
+        .header { text-align: center; padding: 24px 0 20px; }
+        .header h1 {
+            font-family: 'JetBrains Mono', monospace; font-size: 1.4rem; font-weight: 600;
+            letter-spacing: 3px; text-transform: uppercase;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-warm));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .header .version {
+            font-family: 'JetBrains Mono', monospace; font-size: 0.65rem;
+            color: var(--text-dim); letter-spacing: 2px; margin-top: 4px;
+        }
+
+        .connection-bar {
+            display: flex; align-items: center; justify-content: space-between;
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 12px; padding: 12px 16px; margin-bottom: 16px;
+        }
+        .connection-status { display: flex; align-items: center; gap: 8px; }
+        .status-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: var(--accent-red); transition: all 0.3s ease;
+        }
+        .status-dot.connected {
+            background: var(--accent-green); box-shadow: 0 0 8px var(--accent-green-glow);
+            animation: pulse-green 2s ease-in-out infinite;
+        }
+        @keyframes pulse-green {
+            0%, 100% { box-shadow: 0 0 8px rgba(68, 221, 136, 0.2); }
+            50% { box-shadow: 0 0 16px rgba(68, 221, 136, 0.4); }
+        }
+        .status-text { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-secondary); }
+
+        .btn-connect {
+            font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; font-weight: 500;
+            letter-spacing: 1px; text-transform: uppercase; background: transparent;
+            color: var(--accent-orange); border: 1px solid var(--accent-orange);
+            border-radius: 8px; padding: 8px 16px; cursor: pointer; transition: all 0.2s ease;
+        }
+        .btn-connect:hover { background: var(--accent-orange-glow); }
+        .btn-connect.connected { color: var(--accent-red); border-color: var(--accent-red); }
+        .btn-connect.connected:hover { background: var(--accent-red-glow); }
+
+        .card {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 16px; padding: 20px; margin-bottom: 12px;
+            animation: fadeIn 0.4s ease backwards;
+        }
+        .card:nth-child(1) { animation-delay: 0.05s; }
+        .card:nth-child(2) { animation-delay: 0.1s; }
+        .card:nth-child(3) { animation-delay: 0.15s; }
+
+        .card-label {
+            font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; font-weight: 500;
+            letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 16px;
+        }
+
+        .brightness-display { text-align: center; margin-bottom: 20px; }
+        .brightness-value {
+            font-family: 'JetBrains Mono', monospace; font-size: 3.5rem;
+            font-weight: 700; color: var(--text-primary); line-height: 1;
+        }
+        .brightness-value .unit { font-size: 1.5rem; font-weight: 300; color: var(--text-secondary); }
+        .brightness-label {
+            font-family: 'JetBrains Mono', monospace; font-size: 0.65rem;
+            color: var(--text-dim); letter-spacing: 2px; text-transform: uppercase; margin-top: 4px;
+        }
+
+        .slider-container { padding: 0 4px; margin-bottom: 20px; }
+        input[type="range"] {
+            -webkit-appearance: none; appearance: none; width: 100%; height: 6px;
+            border-radius: 3px; background: var(--border); outline: none; cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none; width: 28px; height: 28px;
+            border-radius: 50%; background: var(--accent-orange);
+            box-shadow: 0 0 16px rgba(255, 107, 44, 0.3); cursor: pointer;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 28px; height: 28px; border-radius: 50%; background: var(--accent-orange);
+            box-shadow: 0 0 16px rgba(255, 107, 44, 0.3); cursor: pointer; border: none;
+        }
+
+        .presets-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+        .btn-preset {
+            font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; font-weight: 500;
+            background: var(--bg-primary); color: var(--text-secondary);
+            border: 1px solid var(--border); border-radius: 10px; padding: 12px 4px;
+            cursor: pointer; transition: all 0.15s ease; text-align: center;
+        }
+        .btn-preset:hover { background: var(--bg-card-hover); color: var(--text-primary); border-color: var(--text-dim); }
+        .btn-preset:active { transform: scale(0.95); }
+        .btn-preset.active { background: var(--accent-orange-glow); color: var(--accent-orange); border-color: var(--accent-orange); }
+        .btn-preset.off { color: var(--accent-red); border-color: transparent; }
+        .btn-preset.off.active { background: var(--accent-red-glow); border-color: var(--accent-red); }
+
+        .telemetry-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .telemetry-item {
+            background: var(--bg-primary); border: 1px solid var(--border);
+            border-radius: 10px; padding: 14px;
+        }
+        .telemetry-item .label {
+            font-family: 'JetBrains Mono', monospace; font-size: 0.55rem; font-weight: 500;
+            letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px;
+        }
+        .telemetry-item .value {
+            font-family: 'JetBrains Mono', monospace; font-size: 1.3rem;
+            font-weight: 600; color: var(--text-primary);
+        }
+        .telemetry-item .value .unit { font-size: 0.7rem; font-weight: 400; color: var(--text-secondary); }
+        .telemetry-item.warn .value { color: var(--accent-warm); }
+        .telemetry-item.danger .value { color: var(--accent-red); }
+
+        .footer { text-align: center; padding: 16px 0; }
+        .footer p { font-family: 'JetBrains Mono', monospace; font-size: 0.55rem; color: var(--text-dim); letter-spacing: 1px; }
+
+        .offline-banner {
+            display: none; text-align: center; background: var(--accent-red-glow);
+            border: 1px solid var(--accent-red); border-radius: 8px; padding: 8px;
+            margin-bottom: 12px; font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem; color: var(--accent-red);
+        }
+        .offline-banner.show { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚡ Litball</h1>
+            <div class="version">proto v2.0 — ble control</div>
+        </div>
+
+        <div class="offline-banner" id="offlineBanner">offline — cached version</div>
+
+        <div class="connection-bar">
+            <div class="connection-status">
+                <div class="status-dot" id="statusDot"></div>
+                <span class="status-text" id="statusText">Disconnected</span>
+            </div>
+            <button class="btn-connect" id="btnConnect" onclick="toggleConnection()">Connect</button>
+        </div>
+
+        <div class="card">
+            <div class="card-label">Brightness</div>
+            <div class="brightness-display">
+                <div class="brightness-value">
+                    <span id="brightnessVal">0</span><span class="unit">%</span>
+                </div>
+                <div class="brightness-label">PWM Duty Cycle</div>
+            </div>
+            <div class="slider-container">
+                <input type="range" id="brightnessSlider" min="0" max="100" value="0" oninput="onSliderChange(this.value)">
+            </div>
+            <div class="presets-grid">
+                <button class="btn-preset off active" onclick="setPreset(0)">OFF</button>
+                <button class="btn-preset" onclick="setPreset(5)">5%</button>
+                <button class="btn-preset" onclick="setPreset(10)">10%</button>
+                <button class="btn-preset" onclick="setPreset(30)">30%</button>
+                <button class="btn-preset" onclick="setPreset(50)">50%</button>
+                <button class="btn-preset" onclick="setPreset(65)">65%</button>
+                <button class="btn-preset" onclick="setPreset(80)">80%</button>
+                <button class="btn-preset" onclick="setPreset(100)">100%</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">Telemetry</div>
+            <div class="telemetry-grid">
+                <div class="telemetry-item" id="tempItem">
+                    <div class="label">MCU Temp</div>
+                    <div class="value"><span id="tempVal">--</span> <span class="unit">°C</span></div>
+                </div>
+                <div class="telemetry-item" id="vcapItem">
+                    <div class="label">Supercap</div>
+                    <div class="value"><span id="vcapVal">--</span> <span class="unit">V</span></div>
+                </div>
+                <div class="telemetry-item" id="tpsTempItem">
+                    <div class="label">TPS61169</div>
+                    <div class="value"><span id="tpsTemp">--</span> <span class="unit">°C</span></div>
+                </div>
+                <div class="telemetry-item" id="chargeItem">
+                    <div class="label">Charge I</div>
+                    <div class="value"><span id="chargeI">--</span> <span class="unit">mA</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>litball — guillaume — 2026</p>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // BLE UUIDs — matching firmware
+        // ============================================
+        const SERVICE_UUID    = '12345678-1234-5678-1234-56789abcdef0';
+        const CHAR_UUID       = '12345678-1234-5678-1234-56789abcdef1';
+        const TELEMETRY_UUID  = '12345678-1234-5678-1234-56789abcdef2';
+
+        let device = null;
+        let characteristic = null;
+        let telemetryChar = null;
+        let isConnected = false;
+        let writing = false;
+        let pendingValue = null;
+
+        // ============================================
+        // BLE Connection
+        // ============================================
+        async function toggleConnection() {
+            if (isConnected) { disconnect(); } else { await connect(); }
+        }
+
+        async function connect() {
+            try {
+                updateStatus('Requesting Bluetooth...', false);
+
+                // Only ask for the device popup if we haven't picked it yet this session
+                if (!device) {
+                    device = await navigator.bluetooth.requestDevice({
+                        filters: [{ name: 'LED_Dimmer' }],
+                        optionalServices: [SERVICE_UUID]
+                    });
+                    device.addEventListener('gattserverdisconnected', onDisconnected);
+                }
+
+                updateStatus('Connecting to MCU...', false);
+                const server = await device.gatt.connect();
+
+                updateStatus('Finding service...', false);
+                const service = await server.getPrimaryService(SERVICE_UUID);
+
+                updateStatus('Setting up controls...', false);
+                characteristic = await service.getCharacteristic(CHAR_UUID);
+
+                // Read current brightness
+                const value = await characteristic.readValue();
+                const brightness = value.getUint8(0);
+                document.getElementById('brightnessSlider').value = brightness;
+                document.getElementById('brightnessVal').textContent = brightness;
+                updatePresetButtons(brightness);
+                updateSliderTrack(brightness);
+
+                // Setup Telemetry
+                try {
+                    telemetryChar = await service.getCharacteristic(TELEMETRY_UUID);
+                    await telemetryChar.startNotifications();
+                    telemetryChar.addEventListener('characteristicvaluechanged', onTelemetryData);
+                } catch (e) {
+                    console.log('Telemetry not available:', e.message);
+                }
+
+                isConnected = true;
+                updateStatus('Connected', true);
+
+            } catch (error) {
+                console.error('Connection failed:', error);
+                device = null; // Reset the device so the popup works on the next tap
+                updateStatus('Connection Failed', false);
+                
+                // Show the exact error message on the phone screen
+                alert(`Bluetooth Error: ${error.message}`); 
+                
+                setTimeout(() => updateStatus('Disconnected', false), 2000);
+            }
+        }
+
+        function disconnect() {
+            if (device && device.gatt.connected) { device.gatt.disconnect(); }
+            onDisconnected();
+        }
+
+        function onDisconnected() {
+            isConnected = false;
+            characteristic = null;
+            telemetryChar = null;
+            updateStatus('Disconnected', false);
+            resetTelemetry();
+        }
+
+        function updateStatus(text, connected) {
+            document.getElementById('statusDot').className = 'status-dot' + (connected ? ' connected' : '');
+            document.getElementById('statusText').textContent = text;
+            const btn = document.getElementById('btnConnect');
+            btn.textContent = connected ? 'Disconnect' : 'Connect';
+            btn.className = 'btn-connect' + (connected ? ' connected' : '');
+        }
+
+        // ============================================
+        // BLE Write (fast write-through, no throttle)
+        // ============================================
+        async function writeBrightness(value) {
+            if (!characteristic || !isConnected) return;
+
+            if (writing) { pendingValue = value; return; }
+
+            writing = true;
+            try {
+                const data = new Uint8Array([value]);
+                await characteristic.writeValueWithoutResponse(data);
+            } catch (err) {
+                console.error('Write error:', err);
+            }
+            writing = false;
+
+            if (pendingValue !== null) {
+                const next = pendingValue;
+                pendingValue = null;
+                writeBrightness(next);
+            }
+        }
+
+        // ============================================
+        // Telemetry — receive notify from firmware
+        // ============================================
+        function onTelemetryData(event) {
+            const data = event.target.value;
+
+            // Firmware sends 8 bytes: struct telemetry_data (packed, little-endian)
+            // [0-1] int16  mcu_temp_c100   (°C × 100)
+            // [2-3] uint16 vcap_mv         (millivolts)
+            // [4-5] int16  tps_temp_c100   (°C × 100)
+            // [6-7] uint16 charge_ma       (milliamps)
+
+            if (data.byteLength >= 8) {
+                const mcuTemp  = data.getInt16(0, true) / 100;
+                const vcapMv   = data.getUint16(2, true);
+                const tpsTemp  = data.getInt16(4, true) / 100;
+                const chargeMa = data.getUint16(6, true);
+
+                // MCU Temperature
+                const tempEl = document.getElementById('tempVal');
+                tempEl.textContent = mcuTemp.toFixed(1);
+                const tempItem = document.getElementById('tempItem');
+                tempItem.className = 'telemetry-item' + 
+                    (mcuTemp > 60 ? ' danger' : mcuTemp > 45 ? ' warn' : '');
+
+                // Supercap voltage
+                if (vcapMv > 0) {
+                    document.getElementById('vcapVal').textContent = (vcapMv / 1000).toFixed(2);
+                }
+
+                // TPS61169 temperature
+                if (tpsTemp > 0) {
+                    const tpsEl = document.getElementById('tpsTemp');
+                    tpsEl.textContent = tpsTemp.toFixed(1);
+                    const tpsItem = document.getElementById('tpsTempItem');
+                    tpsItem.className = 'telemetry-item' +
+                        (tpsTemp > 80 ? ' danger' : tpsTemp > 60 ? ' warn' : '');
+                }
+
+                // Charge current
+                if (chargeMa > 0) {
+                    document.getElementById('chargeI').textContent = chargeMa;
+                }
+            }
+        }
+
+        function resetTelemetry() {
+            document.getElementById('tempVal').textContent = '--';
+            document.getElementById('vcapVal').textContent = '--';
+            document.getElementById('tpsTemp').textContent = '--';
+            document.getElementById('chargeI').textContent = '--';
+            document.getElementById('tempItem').className = 'telemetry-item';
+            document.getElementById('tpsTempItem').className = 'telemetry-item';
+        }
+
+        // ============================================
+        // UI Controls
+        // ============================================
+        function onSliderChange(value) {
+            value = Math.round(Number(value));
+            document.getElementById('brightnessVal').textContent = value;
+            updatePresetButtons(value);
+            updateSliderTrack(value);
+            writeBrightness(value);
+        }
+
+        function setPreset(value) {
+            document.getElementById('brightnessSlider').value = value;
+            document.getElementById('brightnessVal').textContent = value;
+            updatePresetButtons(value);
+            updateSliderTrack(value);
+            writeBrightness(value);
+        }
+
+        function updatePresetButtons(value) {
+            document.querySelectorAll('.btn-preset').forEach(btn => {
+                const btnVal = btn.textContent === 'OFF' ? 0 : parseInt(btn.textContent);
+                btn.classList.toggle('active', btnVal === value);
+            });
+        }
+
+        function updateSliderTrack(value) {
+            const slider = document.getElementById('brightnessSlider');
+            slider.style.background = `linear-gradient(to right, var(--accent-orange) 0%, var(--accent-orange) ${value}%, var(--border) ${value}%, var(--border) 100%)`;
+        }
+
+        // ============================================
+        // PWA
+        // ============================================
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').catch(err => console.log('SW failed:', err));
+        }
+        window.addEventListener('online', () => document.getElementById('offlineBanner').classList.remove('show'));
+        window.addEventListener('offline', () => document.getElementById('offlineBanner').classList.add('show'));
+
+        updateSliderTrack(0);
+    </script>
+</body>
+</html>
