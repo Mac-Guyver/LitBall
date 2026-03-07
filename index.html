@@ -357,42 +357,52 @@
             }
         }
 
+
+		// Converts raw 47k/47k ADC values to Celsius
+        function calculateCelsius(adcRaw) {
+            // Ignore dead pins or shorts
+            if (adcRaw < 10 || adcRaw > 4080) return "--"; 
+            
+            // Calculate NTC resistance (Assuming 47k fixed is tied to VDD, NTC to GND)
+            let rNtc = 47000.0 * (adcRaw / (4095.0 - adcRaw));
+            
+            let beta = 3950.0; // Standard beta for 47k NTC
+            let t0 = 298.15;   // 25°C in Kelvin
+            let r0 = 47000.0;  // 47k at 25°C
+            
+            let tempK = 1.0 / ( (1.0 / t0) + (1.0 / beta) * Math.log(rNtc / r0) );
+            return (tempK - 273.15).toFixed(1);
+        }
+
         // ============================================
         // Telemetry — receive notify from firmware
         // ============================================
         function onTelemetryData(event) {
             const data = event.target.value;
 
-            // Firmware sends 10 bytes: uint16_t array (little-endian)
-            // [0-1] uint16 vcap     (raw ADC or mV)
-            // [2-3] uint16 ichg     (raw ADC or mV)
-            // [4-5] uint16 ntc_led  (raw ADC or mV)
-            // [6-7] uint16 ntc_tps  (raw ADC or mV)
-            // [8-9] uint16 pwm      (current brightness %)
-
+            // Firmware sends: vcap(0), ichg(2), ntc_led(4), ntc_tps(6), pwm(8)
             if (data.byteLength >= 10) {
                 const vcapRaw    = data.getUint16(0, true);
                 const ichgRaw    = data.getUint16(2, true);
                 const ntcLedRaw  = data.getUint16(4, true);
                 const ntcTpsRaw  = data.getUint16(6, true);
-                const pwmRaw     = data.getUint16(8, true); // We'll ignore this since the slider handles it
 
-                // Supercap (vcap is around 1496 in your logs, representing 4.0V)
-                // Let's do a rough conversion for now to show Volts
-                const vcapVolts = (vcapRaw / 1496) * 4.0;
-                document.getElementById('vcapVal').textContent = vcapVolts.toFixed(2);
+                // 1. Supercap Voltage (Calibrated: 1496 raw = ~4.0V)
+                if (vcapRaw > 0) {
+                    const vcapVolts = (vcapRaw / 1496.0) * 4.0;
+                    document.getElementById('vcapVal').textContent = vcapVolts.toFixed(2);
+                }
 
-                // Charge Current (Raw for now)
+                // 2. Charge Current (Raw ADC for now)
                 document.getElementById('chargeI').textContent = ichgRaw;
 
-                // LED Temp (NTC_LED Raw)
-                // Note: You will need a Steinhart-Hart equation later to convert this to true °C
+                // 3. LED Temperature (Replaces MCU Temp display)
                 const tempEl = document.getElementById('tempVal');
-                tempEl.textContent = ntcLedRaw; // Display raw ADC for now
+                tempEl.textContent = calculateCelsius(ntcLedRaw);
 
-                // TPS61169 Temp (NTC_TPS Raw)
+                // 4. TPS61169 Temperature
                 const tpsEl = document.getElementById('tpsTemp');
-                tpsEl.textContent = ntcTpsRaw; // Display raw ADC for now
+                tpsEl.textContent = calculateCelsius(ntcTpsRaw);
             }
         }
 
