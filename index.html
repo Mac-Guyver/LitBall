@@ -360,43 +360,36 @@
         function onTelemetryData(event) {
             const data = event.target.value;
 
-            // Firmware sends 8 bytes: struct telemetry_data (packed, little-endian)
-            // [0-1] int16  mcu_temp_c100   (°C × 100)
-            // [2-3] uint16 vcap_mv         (millivolts)
-            // [4-5] int16  tps_temp_c100   (°C × 100)
-            // [6-7] uint16 charge_ma       (milliamps)
+            // Firmware sends 10 bytes: uint16_t array (little-endian)
+            // [0-1] uint16 vcap     (raw ADC or mV)
+            // [2-3] uint16 ichg     (raw ADC or mV)
+            // [4-5] uint16 ntc_led  (raw ADC or mV)
+            // [6-7] uint16 ntc_tps  (raw ADC or mV)
+            // [8-9] uint16 pwm      (current brightness %)
 
-            if (data.byteLength >= 8) {
-                const mcuTemp  = data.getInt16(0, true) / 100;
-                const vcapMv   = data.getUint16(2, true);
-                const tpsTemp  = data.getInt16(4, true) / 100;
-                const chargeMa = data.getUint16(6, true);
+            if (data.byteLength >= 10) {
+                const vcapRaw    = data.getUint16(0, true);
+                const ichgRaw    = data.getUint16(2, true);
+                const ntcLedRaw  = data.getUint16(4, true);
+                const ntcTpsRaw  = data.getUint16(6, true);
+                const pwmRaw     = data.getUint16(8, true); // We'll ignore this since the slider handles it
 
-                // MCU Temperature
+                // Supercap (vcap is around 1496 in your logs, representing 4.0V)
+                // Let's do a rough conversion for now to show Volts
+                const vcapVolts = (vcapRaw / 1496) * 4.0;
+                document.getElementById('vcapVal').textContent = vcapVolts.toFixed(2);
+
+                // Charge Current (Raw for now)
+                document.getElementById('chargeI').textContent = ichgRaw;
+
+                // LED Temp (NTC_LED Raw)
+                // Note: You will need a Steinhart-Hart equation later to convert this to true °C
                 const tempEl = document.getElementById('tempVal');
-                tempEl.textContent = mcuTemp.toFixed(1);
-                const tempItem = document.getElementById('tempItem');
-                tempItem.className = 'telemetry-item' + 
-                    (mcuTemp > 60 ? ' danger' : mcuTemp > 45 ? ' warn' : '');
+                tempEl.textContent = ntcLedRaw; // Display raw ADC for now
 
-                // Supercap voltage
-                if (vcapMv > 0) {
-                    document.getElementById('vcapVal').textContent = (vcapMv / 1000).toFixed(3);
-                }
-
-                // TPS61169 temperature
-                if (tpsTemp > 0) {
-                    const tpsEl = document.getElementById('tpsTemp');
-                    tpsEl.textContent = tpsTemp.toFixed(1);
-                    const tpsItem = document.getElementById('tpsTempItem');
-                    tpsItem.className = 'telemetry-item' +
-                        (tpsTemp > 80 ? ' danger' : tpsTemp > 60 ? ' warn' : '');
-                }
-
-                // Charge current
-                if (chargeMa > 0) {
-                    document.getElementById('chargeI').textContent = chargeMa;
-                }
+                // TPS61169 Temp (NTC_TPS Raw)
+                const tpsEl = document.getElementById('tpsTemp');
+                tpsEl.textContent = ntcTpsRaw; // Display raw ADC for now
             }
         }
 
