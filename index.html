@@ -173,7 +173,7 @@
     <div class="container">
         <div class="header">
             <h1>⚡ Litball</h1>
-            <div class="version">proto v2.2.7 — ble control</div>
+            <div class="version">proto v2.2.8 — ble control</div>
         </div>
 
         <div class="offline-banner" id="offlineBanner">offline — cached version</div>
@@ -421,12 +421,10 @@
                 document.getElementById('chargeI').textContent = ichgRaw;
 
                 // 3. LED Temperature (AIN2) - Ensure it uses the NEW function
-				const ntcLedRaw = data.getUint16(4, true);
 				const ledTempEl = document.getElementById('tempVal');
 				ledTempEl.textContent = calculateCelsius(ntcLedRaw); // Use the fixed function!
 
 				// 4. TPS61169 Temperature (AIN3)
-				const ntcTpsRaw = data.getUint16(6, true);
 				const tpsEl = document.getElementById('tpsTemp');
 				tpsEl.textContent = calculateCelsius(ntcTpsRaw); // Use the fixed function!
             }
