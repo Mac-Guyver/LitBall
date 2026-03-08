@@ -259,6 +259,8 @@
         let writing = false;
         let pendingValue = null;
 
+	    let colorCharacteristic = null;
+
         // ============================================
         // BLE Connection
         // ============================================
@@ -455,6 +457,21 @@
         function updateSliderTrack(value) {
             const slider = document.getElementById('brightnessSlider');
             slider.style.background = `linear-gradient(to right, var(--accent-orange) 0%, var(--accent-orange) ${value}%, var(--border) ${value}%, var(--border) 100%)`;
+        }
+
+        async function setLedChannel(channelId) {
+            if (!colorCharacteristic || !isConnected) {
+                console.error("Not connected or Color Characteristic not found");
+                return;
+            }
+            try {
+                const data = new Uint8Array([channelId]);
+                // Use writeValueWithoutResponse for speed, matches firmware
+                await colorCharacteristic.writeValueWithoutResponse(data);
+                console.log("Sent color channel:", channelId);
+            } catch (err) {
+                console.error("Color write failed:", err);
+            }
         }
 
         // ============================================
