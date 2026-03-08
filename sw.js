@@ -1,11 +1,10 @@
 const CACHE_NAME = 'litball-v2.3.3'; // BUMP THIS VERSION!
 const ASSETS = [
-    './',
-    '/index.html',
-    '/manifest.json',
-	'/icon.svg',
-    '/icon-192.png',
-    '/icon-512.png'
+  './',
+  './index.html',
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png'
 ];
 
 self.addEventListener('install', event => {
