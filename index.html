@@ -173,7 +173,7 @@
     <div class="container">
         <div class="header">
             <h1>⚡ Litball</h1>
-            <div class="version">proto v2.3.6 — ble control</div>
+            <div class="version">proto v2.3.7 — ble control</div>
         </div>
 
         <div class="offline-banner" id="offlineBanner">offline — cached version</div>
@@ -374,15 +374,17 @@
 			{ raw: 2376, temp: 0 },
 			{ raw: 2076, temp: 10 },
 			{ raw: 1734, temp: 20 },
-			{ raw: 1535, temp: 25 },
-			{ raw: 1345, temp: 30 },
-			{ raw: 1000, temp: 40 },
-			{ raw: 723,  temp: 50 },
-			{ raw: 516,  temp: 60 },
-			{ raw: 363,  temp: 70 },
+			{ raw: 1535, temp: 25 }, 
+			{ raw: 1000, temp: 36.5 },
+			{ raw: 650,  temp: 47 },   
+			{ raw: 410,  temp: 60 },
 			{ raw: 257,  temp: 80 },
 			{ raw: 184,  temp: 90 },
-			{ raw: 131,  temp: 100 }
+			{ raw: 131,  temp: 100 },
+			{ raw: 94, 	temp: 110 },
+			{ raw: 70,	temp: 120 },
+			{ raw: 60,	temp: 125 }
+			
 		];
 
 		function calculateCelsius(rawAdc) {
@@ -440,11 +442,11 @@
 
                 // 3. LED Temperature (AIN2) - Using the 1.8V calculation
                 const ntcLedRaw = data.getUint16(4, true);
-                document.getElementById('tempVal').textContent = calculateCelsius(ntcLedRaw);
+                document.getElementById('tempVal').textContent = calculateCelsius(ntcLedRaw).toFixed(1);
 
                 // 4. TPS61169 Temperature (AIN3) - Using the 1.8V calculation
                 const ntcTpsRaw = data.getUint16(6, true);
-                document.getElementById('tpsTemp').textContent = calculateCelsius(ntcTpsRaw);
+                document.getElementById('tpsTemp').textContent = calculateCelsius(ntcTpsRaw).toFixed(1);
             }
         }
 
