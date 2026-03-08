@@ -173,7 +173,7 @@
     <div class="container">
         <div class="header">
             <h1>⚡ Litball</h1>
-            <div class="version">proto v2.2.9 — ble control</div>
+            <div class="version">proto v2.3.0 — ble control</div>
         </div>
 
         <div class="offline-banner" id="offlineBanner">offline — cached version</div>
@@ -409,7 +409,7 @@
                 // 1. Supercap Voltage (Calibrated for your 4.0V cap)
                 const vcapRaw = data.getUint16(0, true);
                 if (vcapRaw > 0) {
-                    const vcapVolts = (vcapRaw / 1851.0) * 4.0;
+                    const vcapVolts = (vcapRaw / 750.0) * 4.0;
                     document.getElementById('vcapVal').textContent = vcapVolts.toFixed(2);
                 }
 
