@@ -373,19 +373,26 @@
 
 		// Converts raw 47k/47k ADC values to Celsius
         function calculateCelsius(adcRaw) {
-            // Ignore dead pins or shorts
-            if (adcRaw < 10 || adcRaw > 4080) return "--"; 
-            
-            // Calculate NTC resistance (Assuming 47k fixed is tied to VDD, NTC to GND)
-            let rNtc = 47000.0 * (adcRaw / (4095.0 - adcRaw));
-            
-            let beta = 3950.0; // Standard beta for 47k NTC
-            let t0 = 298.15;   // 25°C in Kelvin
-            let r0 = 47000.0;  // 47k at 25°C
-            
-            let tempK = 1.0 / ( (1.0 / t0) + (1.0 / beta) * Math.log(rNtc / r0) );
-            return (tempK - 273.15).toFixed(1);
-        }
+			if (adcRaw < 10 || adcRaw > 4080) return "--"; 
+			
+			// VCC = 4095 (12-bit ADC)
+			// Assuming Fixed Resistor (R_fixed) is 47000 ohms
+			let rFixed = 47000.0;
+			
+			// Calculate NTC resistance based on: Vout = Vcc * (R_ntc / (R_ntc + R_fixed))
+			// rNtc = R_fixed * (adcRaw / (4095.0 - adcRaw))
+			let rNtc = rFixed * (adcRaw / (4095.0 - adcRaw));
+			
+			let beta = 4050.0; // Corrected Beta for NCU15WB473
+			let t0 = 298.15;   // 25°C in Kelvin
+			let r0 = 47000.0;  // 47k at 25°C
+			
+			let tempK = 1.0 / ( (1.0 / t0) + (1.0 / beta) * Math.log(rNtc / r0) );
+			let celsius = tempK - 273.15;
+
+			return celsius.toFixed(1);
+		}
+}
 
         // ============================================
         // Telemetry — receive notify from firmware
