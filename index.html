@@ -23,9 +23,8 @@
 
         body {
             background: var(--bg-primary); color: var(--text-primary);
-            font-family: 'Outfit', sans-serif; 
-            min-height: 100vh; overflow-x: hidden; 
-            display: flex; justify-content: center;
+            font-family: 'Outfit', sans-serif; min-height: 100vh;
+            overflow-x: hidden; padding: 0; margin: 0;
         }
 
         body::before {
@@ -35,9 +34,9 @@
             pointer-events: none; z-index: 0;
         }
 
-        /* Flex column that fills the screen to push footer down */
+        /* Flex column ensures the footer stays pushed down */
         .container { 
-            width: 100%; max-width: 420px; padding: 0 16px;
+            width: 100%; max-width: 420px; padding: 0 16px; margin: 0 auto;
             display: flex; flex-direction: column; min-height: 100vh; 
             position: relative; z-index: 1; 
         }
@@ -81,7 +80,6 @@
         .btn-connect.connected { color: var(--accent-red); border-color: var(--accent-red); }
         .btn-connect.connected:hover { background: var(--accent-red-glow); }
 
-        /* Generous card spacing restored */
         .card {
             background: var(--bg-card); border: 1px solid var(--border);
             border-radius: 16px; padding: 20px; margin-bottom: 16px; 
@@ -106,7 +104,6 @@
         }
         .color-btn.active { background: var(--btn-color); color: #000; box-shadow: 0 0 12px var(--btn-color); }
 
-        /* Perfectly centered PWM text */
         .brightness-display { 
             display: flex; align-items: center; justify-content: center; margin-bottom: 20px; 
         }
@@ -172,7 +169,6 @@
         }
         .offline-banner.show { display: block; }
 
-        /* Pushes the footer to the very bottom to fill the void */
         .footer { text-align: center; padding: 20px 0; margin-top: auto; }
         .footer p { font-family: 'JetBrains Mono', monospace; font-size: 0.55rem; color: var(--text-dim); letter-spacing: 1px; }
 
@@ -186,7 +182,7 @@
     <div class="container">
         <div class="header">
             <h1>⚡ Litball</h1>
-            <div class="version">proto v2.5.2 — ble control</div>
+            <div class="version">proto v2.5.3 — ble control</div>
         </div>
 
         <div class="offline-banner" id="offlineBanner">offline — cached version</div>
@@ -259,9 +255,6 @@
     </div>
 
     <script>
-        // ============================================
-        // BLE UUIDs — matching firmware
-        // ============================================
         const SERVICE_UUID    = '12345678-1234-5678-1234-56789abcdef0';
         const CHAR_UUID       = '12345678-1234-5678-1234-56789abcdef1';
         const TELEMETRY_UUID  = '12345678-1234-5678-1234-56789abcdef2';
@@ -275,9 +268,6 @@
         let writing = false;
         let pendingValue = null;
 
-        // ============================================
-        // BLE Connection
-        // ============================================
         async function toggleConnection() {
             if (isConnected) { disconnect(); } else { await connect(); }
         }
@@ -353,9 +343,6 @@
             btn.className = 'btn-connect' + (connected ? ' connected' : '');
         }
 
-        // ============================================
-        // BLE Write 
-        // ============================================
         async function writeBrightness(value) {
             if (!characteristic || !isConnected) return;
             if (writing) { pendingValue = value; return; }
@@ -403,9 +390,6 @@
             return 0;
         }
                 
-        // ============================================
-        // Telemetry
-        // ============================================
         function onTelemetryData(event) {
             const data = event.target.value;
 
@@ -436,9 +420,6 @@
             document.getElementById('chargeI').textContent = '--';
         }
 
-        // ============================================
-        // UI Controls
-        // ============================================
         function onSliderChange(value) {
             value = Math.round(Number(value));
             document.getElementById('brightnessVal').textContent = value;
@@ -483,9 +464,6 @@
             }
         }
 
-        // ============================================
-        // PWA
-        // ============================================
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js').catch(err => console.log('SW failed:', err));
         }
